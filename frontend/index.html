@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>古代天文简仪轴承摩擦仿真与指向精度分析系统</title>
+    <link rel="stylesheet" href="src/css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <header class="header">
+            <h1>古代天文简仪轴承摩擦仿真与指向精度分析系统</h1>
+            <div class="header-right">
+                <span id="connection-status" class="status-indicator status-disconnected">未连接</span>
+                <span id="current-time">--:--:--</span>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <aside class="sidebar">
+                <div class="panel">
+                    <h3>设备信息</h3>
+                    <div id="instrument-info">
+                        <p><strong>名称:</strong> <span id="instrument-name">--</span></p>
+                        <p><strong>型号:</strong> <span id="instrument-model">--</span></p>
+                        <p><strong>位置:</strong> <span id="instrument-location">--</span></p>
+                        <p><strong>建造年份:</strong> <span id="instrument-year">--</span></p>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h3>实时数据</h3>
+                    <div class="axis-selector">
+                        <label>选择轴:</label>
+                        <select id="axis-select">
+                            <option value="赤道轴">赤道轴</option>
+                            <option value="赤纬轴">赤纬轴</option>
+                            <option value="地平经轴">地平经轴</option>
+                            <option value="地平纬轴">地平纬轴</option>
+                        </select>
+                    </div>
+                    <div id="sensor-data-display">
+                        <div class="data-item">
+                            <span class="data-label">转速:</span>
+                            <span class="data-value" id="data-speed">-- rpm</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">摩擦力矩:</span>
+                            <span class="data-value" id="data-torque">-- N·m</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">磨损深度:</span>
+                            <span class="data-value" id="data-wear">-- mm</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">温度:</span>
+                            <span class="data-value" id="data-temp">-- °C</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">径向载荷:</span>
+                            <span class="data-value" id="data-load-r">-- kg</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">轴向载荷:</span>
+                            <span class="data-value" id="data-load-a">-- kg</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h3>摩擦仿真结果</h3>
+                    <div id="friction-data-display">
+                        <div class="data-item">
+                            <span class="data-label">λ比:</span>
+                            <span class="data-value" id="data-lambda">--</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">油膜厚度:</span>
+                            <span class="data-value" id="data-film">-- μm</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">接触压力:</span>
+                            <span class="data-value" id="data-pressure">-- MPa</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">摩擦系数:</span>
+                            <span class="data-value" id="data-friction-coeff">--</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">微凸接触比:</span>
+                            <span class="data-value" id="data-asperity">-- %</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">磨损率:</span>
+                            <span class="data-value" id="data-wear-rate">-- m/s</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h3>指向精度分析</h3>
+                    <div id="pointing-data-display">
+                        <div class="data-item">
+                            <span class="data-label">目标赤经:</span>
+                            <span class="data-value" id="data-target-ra">-- °</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">目标赤纬:</span>
+                            <span class="data-value" id="data-target-dec">-- °</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">方位误差:</span>
+                            <span class="data-value" id="data-az-error">-- '</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">高度误差:</span>
+                            <span class="data-value" id="data-alt-error">-- '</span>
+                        </div>
+                        <div class="data-item highlight">
+                            <span class="data-label">总指向误差:</span>
+                            <span class="data-value" id="data-total-error">-- '</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">不确定度:</span>
+                            <span class="data-value" id="data-uncertainty">-- '</span>
+                        </div>
+                    </div>
+                    <button id="analyze-btn" class="btn btn-primary">分析当前指向</button>
+                </div>
+
+                <div class="panel">
+                    <h3>告警信息</h3>
+                    <div id="alerts-display">
+                        <p class="no-alerts">当前无告警</p>
+                    </div>
+                </div>
+            </aside>
+
+            <main class="content">
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="3d">3D 简仪模型</button>
+                    <button class="tab-btn" data-tab="bearing">轴承剖面视图</button>
+                    <button class="tab-btn" data-tab="charts">趋势图表</button>
+                    <button class="tab-btn" data-tab="compare">仪器对比</button>
+                    <button class="tab-btn" data-tab="era">跨时代对比</button>
+                    <button class="tab-btn" data-tab="lubricant">润滑剂对比</button>
+                    <button class="tab-btn" data-tab="virtual">虚拟操作</button>
+                </div>
+
+                <div class="tab-content">
+                    <div id="tab-3d" class="tab-pane active">
+                        <div id="three-container" class="canvas-container"></div>
+                        <div class="canvas-controls">
+                            <button id="reset-view" class="btn btn-small">重置视角</button>
+                            <button id="toggle-rotation" class="btn btn-small">暂停旋转</button>
+                            <button id="show-bearings" class="btn btn-small">显示轴承</button>
+                            <label class="control-label">
+                                <input type="checkbox" id="show-error-vectors" checked>
+                                显示误差矢量
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="tab-bearing" class="tab-pane">
+                        <div class="bearing-views">
+                            <div class="bearing-view">
+                                <h4>赤道轴轴承</h4>
+                                <canvas id="bearing-canvas-equatorial" class="bearing-canvas"></canvas>
+                                <div class="bearing-info" id="bearing-info-equatorial"></div>
+                            </div>
+                            <div class="bearing-view">
+                                <h4>赤纬轴轴承</h4>
+                                <canvas id="bearing-canvas-declination" class="bearing-canvas"></canvas>
+                                <div class="bearing-info" id="bearing-info-declination"></div>
+                            </div>
+                            <div class="bearing-view">
+                                <h4>地平经轴轴承</h4>
+                                <canvas id="bearing-canvas-azimuth" class="bearing-canvas"></canvas>
+                                <div class="bearing-info" id="bearing-info-azimuth"></div>
+                            </div>
+                            <div class="bearing-view">
+                                <h4>地平纬轴轴承</h4>
+                                <canvas id="bearing-canvas-altitude" class="bearing-canvas"></canvas>
+                                <div class="bearing-info" id="bearing-info-altitude"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="tab-charts" class="tab-pane">
+                        <div class="chart-container">
+                            <div class="chart-wrapper">
+                                <h4>磨损深度趋势</h4>
+                                <canvas id="wear-chart"></canvas>
+                            </div>
+                            <div class="chart-wrapper">
+                                <h4>摩擦力矩趋势</h4>
+                                <canvas id="torque-chart"></canvas>
+                            </div>
+                            <div class="chart-wrapper">
+                                <h4>λ比趋势</h4>
+                                <canvas id="lambda-chart"></canvas>
+                            </div>
+                            <div class="chart-wrapper">
+                                <h4>指向误差趋势</h4>
+                                <canvas id="pointing-chart"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-controls">
+                            <label>时间范围:
+                                <select id="time-range-select">
+                                    <option value="3600">最近1小时</option>
+                                    <option value="86400" selected>最近24小时</option>
+                                    <option value="604800">最近7天</option>
+                                    <option value="2592000">最近30天</option>
+                                </select>
+                            </label>
+                            <button id="refresh-charts" class="btn btn-small">刷新图表</button>
+                        </div>
+                    </div>
+
+                    <div id="tab-compare" class="tab-pane">
+                        <div class="compare-header">
+                            <h3>古代天文仪器轴承设计对比</h3>
+                            <div class="compare-controls">
+                                <label>对比轴:
+                                    <select id="compare-axis-select">
+                                        <option value="赤道轴">赤道轴</option>
+                                        <option value="赤纬轴">赤纬轴</option>
+                                        <option value="地平经轴">地平经轴</option>
+                                    </select>
+                                </label>
+                                <button id="refresh-compare" class="btn btn-small">刷新对比</button>
+                            </div>
+                        </div>
+                        <div id="instrument-compare-grid" class="compare-grid"></div>
+                        <div id="compare-charts" class="compare-charts-container">
+                            <div class="chart-wrapper">
+                                <h4>摩擦系数对比</h4>
+                                <canvas id="compare-friction-chart"></canvas>
+                            </div>
+                            <div class="chart-wrapper">
+                                <h4>指向精度对比</h4>
+                                <canvas id="compare-pointing-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="tab-era" class="tab-pane">
+                        <div class="era-header">
+                            <h3>古代轴承与现代精密轴承跨时代摩擦学对比</h3>
+                            <div class="era-controls">
+                                <label>对比轴:
+                                    <select id="era-axis-select">
+                                        <option value="赤道轴">赤道轴</option>
+                                        <option value="赤纬轴">赤纬轴</option>
+                                    </select>
+                                </label>
+                                <button id="refresh-era" class="btn btn-small">刷新对比</button>
+                            </div>
+                        </div>
+                        <div id="era-summary" class="era-summary"></div>
+                        <div id="era-timeline" class="era-timeline"></div>
+                        <div id="era-charts" class="era-charts-container">
+                            <div class="chart-wrapper">
+                                <h4>摩擦系数演变</h4>
+                                <canvas id="era-friction-chart"></canvas>
+                            </div>
+                            <div class="chart-wrapper">
+                                <h4>磨损率演变</h4>
+                                <canvas id="era-wear-chart"></canvas>
+                            </div>
+                            <div class="chart-wrapper">
+                                <h4>精度提升（跳动量）</h4>
+                                <canvas id="era-precision-chart"></canvas>
+                            </div>
+                        </div>
+                        <div id="era-insights" class="era-insights"></div>
+                    </div>
+
+                    <div id="tab-lubricant" class="tab-pane">
+                        <div class="lubricant-header">
+                            <h3>不同润滑剂对磨损的影响模拟</h3>
+                            <div class="lubricant-controls">
+                                <label>对比轴:
+                                    <select id="lubricant-axis-select">
+                                        <option value="赤道轴">赤道轴</option>
+                                        <option value="赤纬轴">赤纬轴</option>
+                                    </select>
+                                </label>
+                                <button id="refresh-lubricant" class="btn btn-small">重新模拟</button>
+                            </div>
+                        </div>
+                        <div id="lubricant-conditions" class="lubricant-conditions"></div>
+                        <div id="lubricant-table-container" class="data-table-container"></div>
+                        <div id="lubricant-charts" class="lubricant-charts-container">
+                            <div class="chart-wrapper">
+                                <h4>磨损率对比</h4>
+                                <canvas id="lubricant-wear-chart"></canvas>
+                            </div>
+                            <div class="chart-wrapper">
+                                <h4>摩擦系数对比</h4>
+                                <canvas id="lubricant-friction-chart"></canvas>
+                            </div>
+                            <div class="chart-wrapper">
+                                <h4>预计使用寿命（小时）</h4>
+                                <canvas id="lubricant-lifetime-chart"></canvas>
+                            </div>
+                        </div>
+                        <div id="lubricant-history" class="lubricant-history"></div>
+                    </div>
+
+                    <div id="tab-virtual" class="tab-pane">
+                        <div class="virtual-header">
+                            <h3>公众虚拟操作简仪体验</h3>
+                            <p class="virtual-tip">拖动滑块或点击箭头按钮旋转简仪各轴，观察指向精度的实时变化</p>
+                        </div>
+                        <div class="virtual-main">
+                            <div class="virtual-scene-container">
+                                <div id="virtual-three-container" class="canvas-container virtual-canvas"></div>
+                                <div class="virtual-target-info">
+                                    <div class="target-star">
+                                        <span class="label">当前指向:</span>
+                                        <span id="virtual-target-star" class="value">--</span>
+                                    </div>
+                                    <div class="target-coords">
+                                        <span>赤经: <span id="virtual-ra">--°</span></span>
+                                        <span>赤纬: <span id="virtual-dec">--°</span></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="virtual-controls-panel">
+                                <div class="axis-control-group">
+                                    <h4>赤道轴 (方位)</h4>
+                                    <div class="slider-with-buttons">
+                                        <button class="axis-btn axis-left" data-axis="equatorial">-10°</button>
+                                        <input type="range" id="virtual-equatorial" min="0" max="360" step="1" value="0">
+                                        <button class="axis-btn axis-right" data-axis="equatorial">+10°</button>
+                                    </div>
+                                    <div class="slider-value"><span id="virtual-equatorial-val">0</span>°</div>
+                                </div>
+                                <div class="axis-control-group">
+                                    <h4>赤纬轴</h4>
+                                    <div class="slider-with-buttons">
+                                        <button class="axis-btn axis-left" data-axis="declination">-10°</button>
+                                        <input type="range" id="virtual-declination" min="-90" max="90" step="1" value="30">
+                                        <button class="axis-btn axis-right" data-axis="declination">+10°</button>
+                                    </div>
+                                    <div class="slider-value"><span id="virtual-declination-val">30</span>°</div>
+                                </div>
+                                <div class="axis-control-group">
+                                    <h4>地平经轴 (方位)</h4>
+                                    <div class="slider-with-buttons">
+                                        <button class="axis-btn axis-left" data-axis="azimuth">-10°</button>
+                                        <input type="range" id="virtual-azimuth" min="0" max="360" step="1" value="180">
+                                        <button class="axis-btn axis-right" data-axis="azimuth">+10°</button>
+                                    </div>
+                                    <div class="slider-value"><span id="virtual-azimuth-val">180</span>°</div>
+                                </div>
+                                <div class="axis-control-group">
+                                    <h4>地平纬轴 (高度)</h4>
+                                    <div class="slider-with-buttons">
+                                        <button class="axis-btn axis-left" data-axis="altitude">-10°</button>
+                                        <input type="range" id="virtual-altitude" min="0" max="90" step="1" value="45">
+                                        <button class="axis-btn axis-right" data-axis="altitude">+10°</button>
+                                    </div>
+                                    <div class="slider-value"><span id="virtual-altitude-val">45</span>°</div>
+                                </div>
+
+                                <div class="virtual-settings">
+                                    <h4>运行参数</h4>
+                                    <div class="setting-row">
+                                        <label>转速 (rpm):</label>
+                                        <input type="number" id="virtual-speed" min="0.1" max="100" step="0.5" value="1">
+                                    </div>
+                                    <div class="setting-row">
+                                        <label>负载 (kg):</label>
+                                        <input type="number" id="virtual-load" min="10" max="5000" step="50" value="500">
+                                    </div>
+                                    <div class="setting-row">
+                                        <label>温度 (°C):</label>
+                                        <input type="number" id="virtual-temp" min="-40" max="200" step="1" value="25">
+                                    </div>
+                                    <div class="setting-row">
+                                        <label>润滑剂类型:</label>
+                                        <select id="virtual-lubricant">
+                                            <option value="VEGETABLE_OIL">植物油（芝麻油）</option>
+                                            <option value="ANIMAL_FAT">动物油（猪油）</option>
+                                            <option value="MERCURY">水银悬浮</option>
+                                            <option value="DRY">无润滑/干摩擦</option>
+                                            <option value="MINERAL_OIL">矿物油</option>
+                                            <option value="MODERN_SYNTHETIC">现代合成油</option>
+                                        </select>
+                                    </div>
+                                    <div class="setting-row">
+                                        <label>模拟时长 (小时):</label>
+                                        <input type="number" id="virtual-hours" min="0" max="100000" step="100" value="0">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="virtual-results">
+                            <div class="result-card result-error">
+                                <h4>指向精度</h4>
+                                <div class="result-row">
+                                    <span class="label">方位误差:</span>
+                                    <span id="virtual-az-error" class="value">-- '</span>
+                                </div>
+                                <div class="result-row">
+                                    <span class="label">高度误差:</span>
+                                    <span id="virtual-alt-error" class="value">-- '</span>
+                                </div>
+                                <div class="result-row highlight">
+                                    <span class="label">总误差:</span>
+                                    <span id="virtual-total-error" class="value">-- '</span>
+                                </div>
+                                <div class="result-row">
+                                    <span class="label">不确定度:</span>
+                                    <span id="virtual-uncertainty" class="value">-- '</span>
+                                </div>
+                            </div>
+                            <div class="result-card result-friction">
+                                <h4>摩擦与磨损</h4>
+                                <div class="result-row">
+                                    <span class="label">摩擦力矩:</span>
+                                    <span id="virtual-torque" class="value">-- N·m</span>
+                                </div>
+                                <div class="result-row">
+                                    <span class="label">摩擦系数:</span>
+                                    <span id="virtual-friction-coeff" class="value">--</span>
+                                </div>
+                                <div class="result-row">
+                                    <span class="label">λ比:</span>
+                                    <span id="virtual-lambda" class="value">--</span>
+                                </div>
+                                <div class="result-row">
+                                    <span class="label">油膜厚度:</span>
+                                    <span id="virtual-film" class="value">-- μm</span>
+                                </div>
+                                <div class="result-row">
+                                    <span class="label">磨损率:</span>
+                                    <span id="virtual-wear-rate" class="value">-- m/s</span>
+                                </div>
+                            </div>
+                            <div class="result-card result-status">
+                                <h4>运行状态</h4>
+                                <div class="result-row">
+                                    <span class="label">润滑状态:</span>
+                                    <span id="virtual-lubrication" class="value status-ok">--</span>
+                                </div>
+                                <div class="result-row">
+                                    <span class="label">应力等级:</span>
+                                    <span id="virtual-stress" class="value">--</span>
+                                </div>
+                                <div class="result-row">
+                                    <span class="label">累计磨损:</span>
+                                    <span id="virtual-wear-total" class="value">-- mm</span>
+                                </div>
+                                <div class="result-row">
+                                    <span class="label">预计寿命:</span>
+                                    <span id="virtual-lifetime" class="value">-- 小时</span>
+                                </div>
+                                <div id="virtual-status-msg" class="status-message">--</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div id="alert-toast" class="alert-toast hidden">
+        <div class="alert-toast-content">
+            <span class="alert-icon">⚠️</span>
+            <span id="alert-toast-message">告警信息</span>
+            <button id="alert-toast-close" class="alert-close">×</button>
+        </div>
+    </div>
+
+    <script type="module" src="src/js/main.js"></script>
+</body>
+</html>
