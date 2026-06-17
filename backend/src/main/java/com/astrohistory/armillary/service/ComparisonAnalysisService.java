@@ -561,7 +561,8 @@ public class ComparisonAnalysisService {
                 .temperature(sensor.getTemperature())
                 .loadRadial(sensor.getLoadRadial())
                 .loadAxial(sensor.getLoadAxial())
-                .pointingError(sensor.getPointingError())
+                .pointingErrorAz(sensor.getPointingErrorAz())
+                .pointingErrorAlt(sensor.getPointingErrorAlt())
                 .build();
     }
 
