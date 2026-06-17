@@ -29,11 +29,19 @@ public class VirtualOperationResponse {
     private double currentFilmThicknessUm;
     private double frictionCoefficient;
 
-    private double cumulativeWearMm;
-    private double estimatedTimeToFailureHours;
-    private int stressLevel;
-
+    private Double cumulativeWearMm;
+    private Double estimatedTimeToFailureHours;
+    private Integer stressLevel;
     private String targetStarName;
+
+    private Double operationTorqueRequiredNm;
+    private Double inertiaResistanceNm;
+    private Double dampingCoefficient;
+    private Double currentAngularAccelerationRadS2;
+    private Double hapticFeedbackIntensity;
+    private String forceFeedbackStatus;
+    private Double estimatedManualForceN;
+
     private Map<String, Double> axisPositions;
     private Map<String, String> statusMessages;
 }

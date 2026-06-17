@@ -1134,6 +1134,82 @@ body {
 .result-error { border-top: 3px solid #f44336; }
 .result-friction { border-top: 3px solid #ff9800; }
 .result-status { border-top: 3px solid #4caf50; }
+.result-force-feedback {
+    border-top: 3px solid #9c27b0;
+    background: linear-gradient(135deg, rgba(74, 144, 217, 0.08) 0%, rgba(128, 0, 128, 0.08) 100%);
+}
+
+.haptic-feedback-container {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed rgba(156, 39, 176, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.haptic-feedback-container .label {
+    font-weight: 600;
+    color: #9c27b0;
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+.haptic-bar {
+    flex: 1;
+    min-width: 120px;
+    height: 20px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid rgba(156, 39, 176, 0.3);
+}
+
+.haptic-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #4caf50 0%, #ff9800 50%, #f44336 100%);
+    transition: width 0.3s ease;
+    border-radius: 10px;
+}
+
+.haptic-value {
+    font-weight: 700;
+    color: #ce93d8;
+    font-size: 14px;
+    min-width: 50px;
+    text-align: right;
+}
+
+#virtual-force-status {
+    font-weight: 600;
+    font-size: 13px;
+}
+
+#virtual-force-status.status-vibration {
+    color: #ffb74d;
+    animation: pulse-warning 1s infinite;
+}
+
+#virtual-force-status.status-smooth {
+    color: #a5d6a7;
+}
+
+#virtual-force-status.status-danger {
+    color: #e57373;
+    animation: pulse-danger 0.8s infinite;
+}
+
+@keyframes pulse-warning {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+@keyframes pulse-danger {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
 
 .result-row {
     display: flex;

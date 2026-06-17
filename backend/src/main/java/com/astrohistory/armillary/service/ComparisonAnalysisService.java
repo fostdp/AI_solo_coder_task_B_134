@@ -325,6 +325,51 @@ public class ComparisonAnalysisService {
 
         String starName = getNearestStarName(Math.toDegrees(raFromAltAz), Math.toDegrees(decFromAltAz));
 
+        double rpm = request.getRotationalSpeedRpm();
+        double omegaRadS = rpm * 2.0 * Math.PI / 60.0;
+        double eqAngleRad = Math.toRadians(request.getEquatorialAxisAngleDeg());
+        double decAngleRad = Math.toRadians(request.getDeclinationAxisAngleDeg());
+        double angAccel = omegaRadS * (rpm > 1.0 ? 0.1 : 1.0);
+
+        double loadKg = request.getLoadKg();
+        double totalMassKg = 150.0 + loadKg * 0.8;
+        double eqRingRadius = 1.2;
+        double decRingRadius = 0.8;
+        double baseRadius = 1.5;
+
+        double inertiaEq = 0.5 * totalMassKg * eqRingRadius * eqRingRadius;
+        double inertiaDec = 0.5 * totalMassKg * 0.6 * decRingRadius * decRingRadius;
+        double totalInertia = inertiaEq + inertiaDec;
+
+        double inertiaTorque = totalInertia * angAccel;
+
+        double dampingCoeff = 0.05 * totalFrictionTorque * Math.max(omegaRadS, 0.01);
+        double dampingTorque = dampingCoeff * omegaRadS;
+
+        double gravityTorque = totalMassKg * 9.81 * baseRadius * 0.5 *
+                Math.abs(Math.cos(eqAngleRad) * Math.sin(decAngleRad));
+
+        double totalTorque = totalFrictionTorque + inertiaTorque + dampingTorque + gravityTorque;
+
+        double leverArm = 0.4;
+        double manualForce = totalTorque / Math.max(leverArm, 0.01);
+
+        double hapticIntensity = 0.0;
+        String feedbackStatus = "正常";
+        if (minLambda < 0.5) {
+            hapticIntensity = Math.min(1.0, totalTorque / 500.0);
+            feedbackStatus = "强振动 - 边界润滑";
+        } else if (minLambda < 1.0) {
+            hapticIntensity = Math.min(0.6, totalTorque / 200.0);
+            feedbackStatus = "轻微振动 - 混合润滑";
+        } else if (minLambda < 3.0) {
+            hapticIntensity = Math.min(0.3, totalTorque / 100.0);
+            feedbackStatus = "平滑 - 弹流润滑";
+        } else {
+            hapticIntensity = Math.min(0.1, totalTorque / 50.0);
+            feedbackStatus = "极平滑 - 全膜流体润滑";
+        }
+
         return VirtualOperationResponse.builder()
                 .currentAzimuthDeg(az)
                 .currentAltitudeDeg(alt)
@@ -343,6 +388,13 @@ public class ComparisonAnalysisService {
                 .estimatedTimeToFailureHours(lifetime)
                 .stressLevel(stressLevel)
                 .targetStarName(starName)
+                .operationTorqueRequiredNm(totalTorque)
+                .inertiaResistanceNm(inertiaTorque)
+                .dampingCoefficient(dampingCoeff)
+                .currentAngularAccelerationRadS2(angAccel)
+                .hapticFeedbackIntensity(hapticIntensity)
+                .forceFeedbackStatus(feedbackStatus)
+                .estimatedManualForceN(manualForce)
                 .axisPositions(axisPositions)
                 .statusMessages(statusMessages)
                 .build();

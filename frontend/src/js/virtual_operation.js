@@ -296,6 +296,39 @@ export function initVirtualOperation(state, CONFIG) {
         msgEl.style.color = r.stressLevel >= 4 ? '#e57373' :
             r.stressLevel >= 3 ? '#ffb74d' : '#a5d6a7';
 
+        document.getElementById('virtual-op-torque').textContent =
+            formatNum(r.operationTorqueRequiredNm, 2) + ' N·m';
+        document.getElementById('virtual-inertia').textContent =
+            formatNum(r.inertiaResistanceNm, 4) + ' N·m';
+        document.getElementById('virtual-damping').textContent =
+            formatNum(r.dampingCoefficient, 5);
+        document.getElementById('virtual-ang-accel').textContent =
+            formatNum(r.currentAngularAccelerationRadS2, 4) + ' rad/s²';
+        document.getElementById('virtual-manual-force').textContent =
+            formatNum(r.estimatedManualForceN, 1) + ' N';
+
+        const forceStatusEl = document.getElementById('virtual-force-status');
+        forceStatusEl.textContent = r.forceFeedbackStatus || '--';
+        forceStatusEl.className = 'value';
+        if (r.hapticFeedbackIntensity >= 0.5) {
+            forceStatusEl.classList.add('status-danger');
+        } else if (r.hapticFeedbackIntensity >= 0.2) {
+            forceStatusEl.classList.add('status-vibration');
+        } else {
+            forceStatusEl.classList.add('status-smooth');
+        }
+
+        const hapticBar = document.getElementById('virtual-haptic-bar');
+        const hapticIntensity = document.getElementById('virtual-haptic-intensity');
+        if (r.hapticFeedbackIntensity !== null && r.hapticFeedbackIntensity !== undefined) {
+            const pct = Math.min(100, Math.max(0, r.hapticFeedbackIntensity * 100));
+            hapticBar.style.width = pct + '%';
+            hapticIntensity.textContent = (r.hapticFeedbackIntensity * 100).toFixed(1) + '%';
+        } else {
+            hapticBar.style.width = '0%';
+            hapticIntensity.textContent = '--';
+        }
+
         if (stateLocal.armillaryModel?.errorArrow) {
             const scale = Math.min(r.totalPointingErrorArcmin * 30, 3);
             stateLocal.armillaryModel.errorArrow.scale.setScalar(scale || 0.1);
