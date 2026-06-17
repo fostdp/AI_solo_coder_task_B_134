@@ -5,11 +5,9 @@ import com.astrohistory.armillary.dto.VirtualOperationResponse;
 import com.astrohistory.armillary.entity.ArmillaryInstrument;
 import com.astrohistory.armillary.entity.BearingConfig;
 import com.astrohistory.armillary.repository.BearingConfigRepository;
-import com.astrohistory.armillary.repository.FrictionSimulationRepository;
-import com.astrohistory.armillary.repository.PointingAnalysisRepository;
-import com.astrohistory.armillary.repository.SensorDataRepository;
 import com.astrohistory.armillary.simulation.BearingFrictionModel;
-import com.astrohistory.armillary.simulation.PointingAccuracyModel;
+import com.astrohistory.armillary.simulation.SimulationExecutor;
+import com.astrohistory.armillary.vr.VrArmillaService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -20,9 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -34,21 +30,9 @@ class VirtualOperationTest {
     @Mock
     private BearingConfigRepository bearingConfigRepository;
 
-    @Mock
-    private FrictionSimulationRepository frictionSimulationRepository;
-
-    @Mock
-    private SensorDataRepository sensorDataRepository;
-
-    @Mock
-    private PointingAnalysisRepository pointingAnalysisRepository;
-
-    @Mock
-    private PointingAccuracyModel pointingAccuracyModel;
-
     private BearingFrictionModel frictionModel;
 
-    private ComparisonAnalysisService service;
+    private VrArmillaService service;
 
     private UUID instrumentId;
 
@@ -57,10 +41,8 @@ class VirtualOperationTest {
     @BeforeEach
     void setUp() {
         frictionModel = new BearingFrictionModel();
-        service = new ComparisonAnalysisService(
-                frictionModel, pointingAccuracyModel,
-                bearingConfigRepository, frictionSimulationRepository,
-                sensorDataRepository, pointingAnalysisRepository);
+        SimulationExecutor executor = new SimulationExecutor();
+        service = new VrArmillaService(frictionModel, bearingConfigRepository, executor);
 
         instrumentId = UUID.randomUUID();
         instrument = ArmillaryInstrument.builder()

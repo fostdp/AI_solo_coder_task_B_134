@@ -8,10 +8,7 @@ import com.astrohistory.armillary.enums.BearingTechnologyLevel;
 import com.astrohistory.armillary.enums.InstrumentType;
 import com.astrohistory.armillary.enums.LubricantType;
 import com.astrohistory.armillary.repository.BearingConfigRepository;
-import com.astrohistory.armillary.repository.FrictionSimulationRepository;
-import com.astrohistory.armillary.repository.PointingAnalysisRepository;
-import com.astrohistory.armillary.repository.SensorDataRepository;
-import com.astrohistory.armillary.service.ComparisonAnalysisService;
+import com.astrohistory.armillary.vr.VrArmillaService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -29,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
 @DisplayName("缺陷修复验证测试")
+@ExtendWith(MockitoExtension.class)
 class DefectFixVerificationTest {
 
     private BearingFrictionModel frictionModel;
@@ -36,27 +34,16 @@ class DefectFixVerificationTest {
     @Mock
     private BearingConfigRepository bearingConfigRepository;
 
-    @Mock
-    private FrictionSimulationRepository frictionSimulationRepository;
+    private VrArmillaService vrArmillaService;
 
-    @Mock
-    private SensorDataRepository sensorDataRepository;
-
-    @Mock
-    private PointingAnalysisRepository pointingAnalysisRepository;
-
-    @Mock
-    private PointingAccuracyModel pointingAccuracyModel;
-
-    private ComparisonAnalysisService comparisonService;
+    private SimulationExecutor simulationExecutor;
 
     @BeforeEach
     void setUp() {
         frictionModel = new BearingFrictionModel();
-        comparisonService = new ComparisonAnalysisService(
-                frictionModel, pointingAccuracyModel,
-                bearingConfigRepository, frictionSimulationRepository,
-                sensorDataRepository, pointingAnalysisRepository);
+        simulationExecutor = new SimulationExecutor();
+        vrArmillaService = new VrArmillaService(
+                frictionModel, bearingConfigRepository, simulationExecutor);
     }
 
     @Nested
@@ -409,7 +396,7 @@ class DefectFixVerificationTest {
             request.setLoadKg(1000.0);
             request.setRotationalSpeedRpm(2.0);
 
-            VirtualOperationResponse response = comparisonService.simulateVirtualOperation(request);
+            VirtualOperationResponse response = vrArmillaService.simulateVirtualOperation(request);
 
             assertNotNull(response.getOperationTorqueRequiredNm());
             assertNotNull(response.getInertiaResistanceNm());
@@ -430,12 +417,12 @@ class DefectFixVerificationTest {
             VirtualOperationRequest lightRequest = buildBasicRequest();
             lightRequest.setLoadKg(100.0);
             VirtualOperationResponse lightResponse =
-                    comparisonService.simulateVirtualOperation(lightRequest);
+                    vrArmillaService.simulateVirtualOperation(lightRequest);
 
             VirtualOperationRequest heavyRequest = buildBasicRequest();
             heavyRequest.setLoadKg(5000.0);
             VirtualOperationResponse heavyResponse =
-                    comparisonService.simulateVirtualOperation(heavyRequest);
+                    vrArmillaService.simulateVirtualOperation(heavyRequest);
 
             assertTrue(heavyResponse.getOperationTorqueRequiredNm() >
                             lightResponse.getOperationTorqueRequiredNm(),
@@ -451,12 +438,12 @@ class DefectFixVerificationTest {
             VirtualOperationRequest slowRequest = buildBasicRequest();
             slowRequest.setRotationalSpeedRpm(0.1);
             VirtualOperationResponse slowResponse =
-                    comparisonService.simulateVirtualOperation(slowRequest);
+                    vrArmillaService.simulateVirtualOperation(slowRequest);
 
             VirtualOperationRequest fastRequest = buildBasicRequest();
             fastRequest.setRotationalSpeedRpm(10.0);
             VirtualOperationResponse fastResponse =
-                    comparisonService.simulateVirtualOperation(fastRequest);
+                    vrArmillaService.simulateVirtualOperation(fastRequest);
 
             assertTrue(fastResponse.getInertiaResistanceNm() >
                             slowResponse.getInertiaResistanceNm(),
@@ -471,12 +458,12 @@ class DefectFixVerificationTest {
             goodLubrication.setLubricantType("MODERN_SYNTHETIC");
             goodLubrication.setTemperatureC(25.0);
             VirtualOperationResponse goodResponse =
-                    comparisonService.simulateVirtualOperation(goodLubrication);
+                    vrArmillaService.simulateVirtualOperation(goodLubrication);
 
             VirtualOperationRequest badLubrication = buildBasicRequest();
             badLubrication.setLubricantType("DRY");
             VirtualOperationResponse badResponse =
-                    comparisonService.simulateVirtualOperation(badLubrication);
+                    vrArmillaService.simulateVirtualOperation(badLubrication);
 
             assertTrue(badResponse.getHapticFeedbackIntensity() >
                             goodResponse.getHapticFeedbackIntensity(),
@@ -491,14 +478,14 @@ class DefectFixVerificationTest {
             VirtualOperationRequest dryRequest = buildBasicRequest();
             dryRequest.setLubricantType("DRY");
             VirtualOperationResponse dryResponse =
-                    comparisonService.simulateVirtualOperation(dryRequest);
+                    vrArmillaService.simulateVirtualOperation(dryRequest);
             assertTrue(dryResponse.getForceFeedbackStatus().contains("边界润滑") ||
                             dryResponse.getForceFeedbackStatus().contains("振动"));
 
             VirtualOperationRequest syntheticRequest = buildBasicRequest();
             syntheticRequest.setLubricantType("MODERN_SYNTHETIC");
             VirtualOperationResponse syntheticResponse =
-                    comparisonService.simulateVirtualOperation(syntheticRequest);
+                    vrArmillaService.simulateVirtualOperation(syntheticRequest);
             assertTrue(syntheticResponse.getForceFeedbackStatus().contains("弹流") ||
                             syntheticResponse.getForceFeedbackStatus().contains("平滑"));
         }
@@ -509,7 +496,7 @@ class DefectFixVerificationTest {
             VirtualOperationRequest request = buildBasicRequest();
             request.setRotationalSpeedRpm(1.0);
             VirtualOperationResponse response =
-                    comparisonService.simulateVirtualOperation(request);
+                    vrArmillaService.simulateVirtualOperation(request);
 
             assertNotNull(response.getCurrentAngularAccelerationRadS2());
             assertTrue(response.getCurrentAngularAccelerationRadS2() >= 0);
@@ -524,7 +511,7 @@ class DefectFixVerificationTest {
             normalRequest.setLoadKg(500.0);
             normalRequest.setRotationalSpeedRpm(0.5);
             VirtualOperationResponse response =
-                    comparisonService.simulateVirtualOperation(normalRequest);
+                    vrArmillaService.simulateVirtualOperation(normalRequest);
 
             assertTrue(response.getEstimatedManualForceN() > 0,
                     "手动推力应为正");
@@ -540,7 +527,7 @@ class DefectFixVerificationTest {
             heavyRequest.setLoadKg(10000.0);
             heavyRequest.setRotationalSpeedRpm(0.1);
             VirtualOperationResponse response =
-                    comparisonService.simulateVirtualOperation(heavyRequest);
+                    vrArmillaService.simulateVirtualOperation(heavyRequest);
 
             assertTrue(response.getEstimatedManualForceN() > 0);
             assertTrue(Double.isFinite(response.getEstimatedManualForceN()));
@@ -552,7 +539,7 @@ class DefectFixVerificationTest {
             VirtualOperationRequest zeroSpeedRequest = buildBasicRequest();
             zeroSpeedRequest.setRotationalSpeedRpm(0.001);
             VirtualOperationResponse response =
-                    comparisonService.simulateVirtualOperation(zeroSpeedRequest);
+                    vrArmillaService.simulateVirtualOperation(zeroSpeedRequest);
 
             assertNotNull(response.getInertiaResistanceNm());
             assertTrue(Double.isFinite(response.getInertiaResistanceNm()));
@@ -565,13 +552,13 @@ class DefectFixVerificationTest {
             eq0Request.setEquatorialAxisAngleDeg(0.0);
             eq0Request.setDeclinationAxisAngleDeg(90.0);
             VirtualOperationResponse eq0Response =
-                    comparisonService.simulateVirtualOperation(eq0Request);
+                    vrArmillaService.simulateVirtualOperation(eq0Request);
 
             VirtualOperationRequest eq90Request = buildBasicRequest();
             eq90Request.setEquatorialAxisAngleDeg(90.0);
             eq90Request.setDeclinationAxisAngleDeg(0.0);
             VirtualOperationResponse eq90Response =
-                    comparisonService.simulateVirtualOperation(eq90Request);
+                    vrArmillaService.simulateVirtualOperation(eq90Request);
 
             assertNotEquals(eq0Response.getOperationTorqueRequiredNm(),
                     eq90Response.getOperationTorqueRequiredNm(), 0.001,

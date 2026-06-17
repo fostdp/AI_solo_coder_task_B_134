@@ -6,10 +6,10 @@ import { Chart, registerables } from 'chart.js';
 import { initSimplifiedArmillary3D } from './simplified_armilla_3d.js';
 import { initBearingPanel } from './bearing_panel.js';
 import { initCharts } from './charts.js';
-import { initCompareView } from './compare_view.js';
-import { initEraComparison } from './era_comparison.js';
-import { initLubricantComparison } from './lubricant_comparison.js';
-import { initVirtualOperation } from './virtual_operation.js';
+import { initCompareView } from './bearing_comparator/index.js';
+import { initEraComparison } from './era_comparator/index.js';
+import { initLubricantComparison } from './lubricant_analyzer/index.js';
+import { initVirtualOperation } from './vr_armilla/index.js';
 
 Chart.register(...registerables);
 
